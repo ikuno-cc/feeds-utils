@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -54,3 +56,7 @@ class NormalizeRequest(BaseModel):
         if v.upper() not in allowed:
             raise ValueError(f"unicode_form must be one of {allowed}")
         return v.upper()
+
+
+class StringToJsonRequest(BaseModel):
+    text: str = Field(..., description="String to parse as JSON")

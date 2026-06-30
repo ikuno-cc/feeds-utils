@@ -1,7 +1,9 @@
+import json
+
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.requests import CleanRequest, NormalizeRequest
-from app.schemas.responses import CleanResponse, NormalizeResponse
+from app.schemas.requests import CleanRequest, NormalizeRequest, StringToJsonRequest
+from app.schemas.responses import CleanResponse, NormalizeResponse, StringToJsonResponse
 from app.services.cleaner import CleanerOptions, clean
 from app.services.normalizer import NormalizerOptions, normalize
 
@@ -61,6 +63,27 @@ def normalize_endpoint(req: NormalizeRequest):
             normalized=result,
             original_length=original_len,
             normalized_length=normalized_len,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/string-to-json", response_model=StringToJsonResponse, summary="Parse a string as JSON")
+def string_to_json_endpoint(req: StringToJsonRequest):
+    try:
+        parsed = json.loads(req.text)
+        return StringToJsonResponse(
+            original=req.text,
+            parsed=parsed,
+            is_valid=True,
+            error=None,
+        )
+    except json.JSONDecodeError as e:
+        return StringToJsonResponse(
+            original=req.text,
+            parsed=None,
+            is_valid=False,
+            error=str(e),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

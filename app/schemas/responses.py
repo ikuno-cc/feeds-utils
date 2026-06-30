@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -12,6 +14,13 @@ class NormalizeResponse(BaseModel):
     normalized: str = Field(..., description="The normalized text")
     original_length: int = Field(..., description="Length of the original input")
     normalized_length: int = Field(..., description="Length of the normalized output")
+
+
+class StringToJsonResponse(BaseModel):
+    original: str = Field(..., description="The original input string")
+    parsed: Any = Field(None, description="Parsed JSON value if valid")
+    is_valid: bool = Field(..., description="Whether the string is valid JSON")
+    error: str | None = Field(None, description="Error message if invalid")
 
 
 class ErrorResponse(BaseModel):
