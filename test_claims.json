@@ -1,0 +1,46 @@
+[
+    {
+        "claim": "West Texas Intermediate settled below $70 a barrel.",
+        "subject": "West Texas Intermediate",
+        "predicate": "settled below",
+        "value": 70,
+        "unit": "$/barrel",
+        "period": "friday, june 26",
+        "basis": "u.s. benchmark crude price",
+        "source_sentence": "west texas intermediate, the u.s. benchmark, settled below $70 a barrel on friday, june 26, for the first time since late february, according to cnbc.",
+        "source_id": "68cf95a2-a7de-4550-b9e0-2feda2c20e2b"
+    },
+    {
+        "claim": "Brent traded near $73.",
+        "subject": "Brent crude",
+        "predicate": "traded near",
+        "value": 73,
+        "unit": "$/barrel",
+        "period": "friday, june 26",
+        "basis": "crude oil price",
+        "source_sentence": "brent traded near $73.",
+        "source_id": "68cf95a2-a7de-4550-b9e0-2feda2c20e2b"
+    },
+    {
+        "claim": "The U.S.-Iran memorandum ended nearly four months of fighting.",
+        "subject": "U.S.-Iran memorandum of understanding",
+        "predicate": "ended",
+        "value": 4,
+        "unit": "months",
+        "period": "mid-june",
+        "basis": "duration of fighting",
+        "source_sentence": "a u.s.-iran memorandum of understanding signed in mid-june ended nearly four months of fighting, reopened the strait of hormuz, and lifted a u.s. naval blockade, cnbc reported.",
+        "source_id": "68cf95a2-a7de-4550-b9e0-2feda2c20e2b"
+    },
+    {
+        "claim": "The Strait of Hormuz carries roughly a fifth of the world's seaborne oil.",
+        "subject": "Strait of Hormuz",
+        "predicate": "carries roughly",
+        "value": 20,
+        "unit": "percent",
+        "period": "not specified",
+        "basis": "share of world's seaborne oil",
+        "source_sentence": "after the u.s. and israel struck iran in late february, tehran throttled the strait of hormuz, the chokepoint that carries roughly a fifth of the world's seaborne oil, al jazeera reported.",
+        "source_id": "68cf95a2-a7de-4550-b9e0-2feda2c20e2b"
+    }
+]
