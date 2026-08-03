@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.clean import router as clean_router
 from app.api.routes.fact_check import router as fact_check_router
+from app.api.routes.archive import router as archive_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -22,6 +23,8 @@ app.add_middleware(
 
 app.include_router(clean_router)
 app.include_router(fact_check_router)
+app.include_router(archive_router)
+
 
 
 @app.get("/", tags=["Health"])
