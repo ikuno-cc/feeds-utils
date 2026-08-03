@@ -73,7 +73,7 @@ def extract_single_archive_url(html_content: str, domain: str = "archive.ph") ->
 
 class ArchiveService:
     @staticmethod
-    async def get_or_create_archive(target_url: str, preferred_domain: str = "archive.ph") -> Tuple[Optional[str], str, str, Optional[str]]:
+    async def get_or_create_archive(target_url: str, preferred_domain: str = "archive.ph") -> Tuple[str, str, str, Optional[str]]:
         """
         Main method to retrieve or submit an archived URL.
         Returns tuple: (archive_url, domain_used, status, error)
@@ -104,8 +104,14 @@ class ArchiveService:
         if wayback_url:
             return wayback_url, "web.archive.org", "wayback_fallback", None
 
-        # Strategy 4: If CAPTCHA wall prevents automatic extraction
-        return None, preferred_domain, "captcha_required", "archive.ph requires CAPTCHA verification to submit or resolve shortlink"
+        # Strategy 4: Direct browser link (opens snapshot search results page on archive.ph)
+        direct_archive_url = f"https://{preferred_domain}/w/{target_url}"
+        return (
+            direct_archive_url,
+            preferred_domain,
+            "captcha_required",
+            "archive.ph presented a bot-check; returning direct web browser snapshot link"
+        )
 
     @staticmethod
     async def _try_playwright(target_url: str, domain: str) -> Optional[Tuple[str, str]]:

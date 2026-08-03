@@ -6,7 +6,6 @@ from app.services.archiver import extract_single_archive_url
 client = TestClient(app)
 
 def test_extract_single_archive_url_parser():
-    # Mock HTML matching multi-result search page with thumbnail cards
     mock_html = """
     <html>
     <body>
@@ -40,7 +39,8 @@ def test_archive_endpoint_structure():
     assert response.status_code == 200
     data = response.json()
     assert data["original_url"] == test_target
-    assert "archive_url" in data
+    assert data["archive_url"] is not None
+    assert data["archive_url"].startswith("http")
     assert "status" in data
     assert "domain_used" in data
     print("Archive endpoint response:", data)
@@ -52,4 +52,5 @@ def test_archive_shortcut_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["original_url"] == test_target
+    assert data["archive_url"].startswith("http")
     print("Archive shortcut response:", data)
