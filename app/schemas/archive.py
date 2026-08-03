@@ -19,7 +19,7 @@ class ArchiveRequest(BaseModel):
 
 class ArchiveResponse(BaseModel):
     original_url: str = Field(..., description="The original target URL requested")
-    archive_url: str = Field(..., description="The resulting single archive shortlink URL")
-    status: str = Field(..., description="Status of the archive operation (success, fallback, or cached)")
+    archive_url: Optional[str] = Field(None, description="The resulting single shortlink URL (e.g. https://archive.ph/H6GcX)")
+    status: str = Field(..., description="Status of the archive operation (success, wayback_fallback, or captcha_required)")
     domain_used: str = Field(..., description="The archive domain that satisfied the request")
     error: Optional[str] = Field(None, description="Error message if any occurred")

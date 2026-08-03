@@ -13,7 +13,7 @@ router = APIRouter(tags=["Archive"])
 )
 async def create_archive(req: ArchiveRequest) -> ArchiveResponse:
     try:
-        archive_url, domain_used, status = await ArchiveService.get_or_create_archive(
+        archive_url, domain_used, status, error = await ArchiveService.get_or_create_archive(
             target_url=req.url,
             preferred_domain=req.domain or "archive.ph"
         )
@@ -22,7 +22,7 @@ async def create_archive(req: ArchiveRequest) -> ArchiveResponse:
             archive_url=archive_url,
             status=status,
             domain_used=domain_used,
-            error=None
+            error=error
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

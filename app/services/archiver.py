@@ -19,28 +19,29 @@ MIRROR_DOMAINS = [
     "archive.ph",
     "archive.today",
     "archive.is",
-    "archive.md"
+    "archive.md",
+    "archive.li",
+    "archive.vn",
+    "archive.fo"
 ]
 
 
 def extract_single_archive_url(html_content: str, domain: str = "archive.ph") -> Optional[str]:
     """
     Parses HTML content from archive.ph search or submission page.
-    If multiple snapshot results exist (e.g. thumbnails page), selects the first/newest snapshot URL.
+    If multiple snapshot results exist (e.g. thumbnails page), selects the first/newest 5-8 char shortlink URL.
     Returns canonical shortlink (e.g. https://archive.ph/H6GcX).
     """
     soup = BeautifulSoup(html_content, "html.parser")
     
-    # 1. Look for snapshot links in search result items / thumbnail wrappers
     shortlinks: List[str] = []
     
     for a in soup.find_all("a", href=True):
         href = a["href"].strip()
         
-        # Match pattern like /H6GcX or https://archive.ph/H6GcX or /2026.08.03-095512/...
-        match = re.search(r'/(?:[a-zA-Z0-9]{5,8}|[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]{6}/.+)$', href)
+        # Match EXACT 5 to 8 character shortlinks like /H6GcX or https://archive.ph/H6GcX
+        match = re.search(r'/(?:[a-zA-Z0-9]{5,8})$', href)
         if match:
-            # Clean base domain
             if href.startswith("http://") or href.startswith("https://"):
                 full_url = href
             else:
@@ -52,20 +53,19 @@ def extract_single_archive_url(html_content: str, domain: str = "archive.ph") ->
                     shortlinks.append(full_url)
 
     if shortlinks:
-        # Return the newest snapshot shortlink
         return shortlinks[0]
 
-    # 2. Check canonical link tag or meta og:url
+    # Check canonical link tag or meta og:url
     canonical = soup.find("link", rel="canonical")
     if canonical and canonical.get("href"):
-        href = canonical["href"]
-        if "archive." in href:
+        href = canonical["href"].strip()
+        if re.search(r'archive\.[a-z]+/[a-zA-Z0-9]{5,8}$', href):
             return href
 
     og_url = soup.find("meta", property="og:url")
     if og_url and og_url.get("content"):
-        content = og_url["content"]
-        if "archive." in content:
+        content = og_url["content"].strip()
+        if re.search(r'archive\.[a-z]+/[a-zA-Z0-9]{5,8}$', content):
             return content
 
     return None
@@ -73,44 +73,45 @@ def extract_single_archive_url(html_content: str, domain: str = "archive.ph") ->
 
 class ArchiveService:
     @staticmethod
-    async def get_or_create_archive(target_url: str, preferred_domain: str = "archive.ph") -> Tuple[str, str, str]:
+    async def get_or_create_archive(target_url: str, preferred_domain: str = "archive.ph") -> Tuple[Optional[str], str, str, Optional[str]]:
         """
         Main method to retrieve or submit an archived URL.
-        Returns tuple: (archive_url, domain_used, status)
+        Returns tuple: (archive_url, domain_used, status, error)
         """
-        domain = preferred_domain if preferred_domain in MIRROR_DOMAINS else "archive.ph"
+        domains = [preferred_domain] + [d for d in MIRROR_DOMAINS if d != preferred_domain]
         
-        # 1. Try Playwright on primary domain first
+        # Strategy 1: Try Playwright stealth on mirror domains
         if HAS_PLAYWRIGHT:
+            for domain in domains[:2]:
+                try:
+                    res = await ArchiveService._try_playwright(target_url, domain)
+                    if res:
+                        return res[0], domain, "success", None
+                except Exception as e:
+                    logger.warning(f"Playwright attempt failed for {domain}: {e}")
+
+        # Strategy 2: Try curl_cffi requests impersonating Chrome
+        for domain in domains[:3]:
             try:
-                res = await ArchiveService._try_playwright(target_url, domain)
+                res = await ArchiveService._try_curl_cffi(target_url, domain)
                 if res:
-                    return res[0], domain, "success"
+                    return res[0], domain, "success", None
             except Exception as e:
-                logger.warning(f"Playwright attempt failed for {domain}: {e}")
+                logger.warning(f"curl_cffi attempt failed for {domain}: {e}")
 
-        # 2. Try curl_cffi on primary domain
-        try:
-            res = await ArchiveService._try_curl_cffi(target_url, domain)
-            if res:
-                return res[0], domain, "success"
-        except Exception as e:
-            logger.warning(f"curl_cffi attempt failed for {domain}: {e}")
-
-        # 3. Fast fallback to Wayback Machine (web.archive.org)
+        # Strategy 3: Wayback Machine fallback (web.archive.org)
         wayback_url = await ArchiveService._try_wayback(target_url)
         if wayback_url:
-            return wayback_url, "web.archive.org", "wayback_fallback"
+            return wayback_url, "web.archive.org", "wayback_fallback", None
 
-        # 4. Canonical search link format
-        fallback_url = f"https://{domain}/{target_url}"
-        return fallback_url, domain, "cached_redirect"
+        # Strategy 4: If CAPTCHA wall prevents automatic extraction
+        return None, preferred_domain, "captcha_required", "archive.ph requires CAPTCHA verification to submit or resolve shortlink"
 
     @staticmethod
     async def _try_playwright(target_url: str, domain: str) -> Optional[Tuple[str, str]]:
         """
         Uses Playwright async browser with stealth context to navigate archive.ph,
-        search/submit target_url, and resolve multi-result pages.
+        search/submit target_url, and resolve multi-result pages into a shortlink.
         """
         async with async_playwright() as p:
             browser = await p.chromium.launch(
@@ -183,9 +184,10 @@ class ArchiveService:
         Queries Wayback Machine (archive.org) API as a fallback.
         """
         try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
+            headers = {"User-Agent": "FeedUtilsBot/1.0 (+https://example.com)"}
+            async with httpx.AsyncClient(timeout=5.0) as client:
                 api_url = f"https://archive.org/wayback/available?url={target_url}"
-                res = await client.get(api_url)
+                res = await client.get(api_url, headers=headers)
                 if res.status_code == 200:
                     data = res.json()
                     snapshots = data.get("archived_snapshots", {})
