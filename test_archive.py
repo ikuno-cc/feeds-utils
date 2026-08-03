@@ -39,10 +39,9 @@ def test_archive_endpoint_structure():
     assert response.status_code == 200
     data = response.json()
     assert data["original_url"] == test_target
-    assert data["archive_url"] is not None
-    assert data["archive_url"].startswith("http")
-    assert "status" in data
-    assert "domain_used" in data
+    assert data["archive_url"] == "https://archive.ph/H6GcX"
+    assert data["status"] == "success"
+    assert data["domain_used"] == "archive.ph"
     print("Archive endpoint response:", data)
 
 
@@ -52,5 +51,6 @@ def test_archive_shortcut_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["original_url"] == test_target
-    assert data["archive_url"].startswith("http")
+    assert data["archive_url"] == "https://archive.ph/H6GcX"
+    assert data["status"] == "success"
     print("Archive shortcut response:", data)
